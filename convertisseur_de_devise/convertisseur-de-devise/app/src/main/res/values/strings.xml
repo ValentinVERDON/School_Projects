@@ -1,0 +1,19 @@
+<resources>
+    <string name="app_name">Convertisseur de devises</string>
+
+    <string-array name="devises_depart">
+        <item>Euro</item>
+        <item>Dollar USA</item>
+        <item>Yuan</item>
+        <item>Yen</item>
+    </string-array>
+
+    <string-array name="devises_arrivee">
+        <item>Euro</item>
+        <item>Dollar USA</item>
+        <item>Yuan</item>
+        <item>Yen</item>
+    </string-array>
+
+
+</resources>
