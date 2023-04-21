@@ -184,7 +184,6 @@ def calcul():
                 if present :  
                     J[k].remove(j_start)
 
-                
                 #maj de tau_s en suivant l'eq 3
                 tau_s[l][j_start] = (1-rho)*tau_s[l][j_start] + rho*tau_0
 

@@ -12,6 +12,7 @@ import numpy as np
 import random
 import matplotlib.pyplot as plt
 from tqdm import tqdm 
+import time 
 """ ---------- Classe associée à la création d'une Situation ------------- """
 class Situation:
 
@@ -42,12 +43,20 @@ class Simulation:
         self.L_best = -1
         self.S_best = []
 
+        self.historique_L_best = [] # pour tracer les courbes de convergences
+
     def __str__(self):
         return "Simulation({},{},{},{},{},{},{},{})".format(self.tau_0,self.r,self.beta,self.rho,self.alpha,self.v,self.q0,self.t_max,self.L_best,self.S_best)
     
     def affichage_solution(self):
         print("L_best : ",self.L_best)
         print("S_best : ",self.S_best)
+    
+    def envoie_solution(self):
+        return self.L_best , self.S_best
+    
+    def envoie_historique(self):
+        return self.historique_L_best
 
     def initialisation (self,m,n,coord):
 
@@ -160,8 +169,7 @@ class Simulation:
                         if all(J[k][j] in S[k][l] for l in range(m)) :
                             J[k].remove(J[k][j])
                     
-                    
-                    #maj de tau_s en suivant l'eq 3
+                    #maj de tau en suivant l'eq 3
                     tau[l][j] = (1-self.rho)*tau[l][j] + self.rho*self.tau_0
 
                 #maj k 
@@ -175,9 +183,12 @@ class Simulation:
             L[k] = self.evaluer(S[k],passager,main_stop,m,coord)
 
             # on met à jour la meilleure solution 
-            if L[k] < self.L_best or self.L_best == -1 : 
+            if L[ k] < self.L_best or self.L_best == -1 : 
                 self.L_best = L[k]
                 self.S_best = S[k]
+
+        # on enregistre le nouveau L_best
+        self.historique_L_best.append(self.L_best)
     
     def maj_pheromones(self,m,n,tau,tau_s):
         for l in range(m):
@@ -312,21 +323,105 @@ class Simulation:
             temps_moyen += self.calcul_un_passager(sol,pas,main_stop,m,coord)
         return temps_moyen/len(passager)
 
+""" ------- Fonction supplémentaire pour l'étude de la solution -----------"""
+
+# Génération de passager aléatoire :
+def generation_passager(n,nb_station,random_state=42):
+    np.random.seed(random_state)
+    passager = []
+    for _ in range(n):
+        depart = np.random.randint(nb_station)
+        arrive = np.random.randint(nb_station)
+        while arrive == depart :
+            arrive = np.random.randint(nb_station)
+        passager.append((depart,arrive))
+    return passager
+
+# Génération de coordonnées aléatoire :
+def generation_coord(nb_station,random_state=42,x_min=0,x_max=100,y_min=0,y_max=100):
+    np.random.seed(random_state)
+    coord = []
+    for _ in range(nb_station):
+        x = np.random.randint(x_min,x_max)
+        y = np.random.randint(y_min,y_max)
+        while (x,y) in coord :
+            x = np.random.randint(x_min,x_max)
+            y = np.random.randint(y_min,y_max)
+        coord.append((x,y))
+    main_stop = np.random.randint(nb_station)
+    return coord,main_stop
+
 
 """ ----------- Main ----------- """
 
 if __name__ == "__main__":
 
+    """ ---- Test pour une situation précise ---- """
+    # on génère 100 passager pour 8 station en mettant un random_state = 42
+    ##passager = generation_passager(100,8,42)
+
     # on crée une situation
-    situation = Situation(2,[(0,0),(0,3),(2,1),(3,3),(6,1),(4,2),(3,5)],[(0,1),(1,2),(0,3),(4,1)],4)
+    ##situation = Situation(2,[(0,0),(2,4),(2,8),(4,2),(6,6),(6,0),(10,4),(14,6)],passager,4)
     # on affiche la situation
-    print(situation)
+    ##print(situation)
 
     # on crée une simulation
-    simulation = Simulation()
+    ##simulation = Simulation()
     # on affiche la simulation
-    print(simulation)
+    ##print(simulation)
     # on lance la simulation
+    ##simulation.lancer_simulation(situation)
+    # on affiche la solution
+    ##simulation.affichage_solution()
+
+    """ ---- Test mesure temps moyen d'éxécution ---- """
+    """ # on crée des coord aléatoire
+    coord,main_stop = generation_coord(20,42)
+    # on génère des passagers
+    passager = generation_passager(100,len(coord),42)
+    # on crée une situation
+    situation = Situation(3,coord,passager,main_stop)
+
+    # on créer des simulations, on les fait tourner et on mesure le temps total d'exécution
+    nb_simulation = 100
+    temps_total = 0
+    Liste_resultat = []
+    for _ in tqdm(range(nb_simulation)):
+        simulation = Simulation()
+        debut = time.time()
+        simulation.lancer_simulation(situation)
+        fin = time.time()
+        temps_total += fin-debut
+        L_best , S_best = simulation.envoie_solution()
+        Liste_resultat.append((L_best,S_best))
+
+    # on affiche le temps total d'exécution
+    print("Temps total d'exécution : ",temps_total)
+    print("Temps moyen : ",temps_total/nb_simulation) """
+
+
+    """ ---- Test convergence ---- """
+
+    # on crée des coord aléatoire
+    coord,main_stop = generation_coord(20,42)
+    # on génère des passagers
+    passager = generation_passager(100,len(coord),42)
+    # on crée une situation
+    situation = Situation(3,coord,passager,main_stop)
+    # on lance la simulation
+    simulation = Simulation()
     simulation.lancer_simulation(situation)
     # on affiche la solution
-    simulation.affichage_solution()
+    historique_L_best = simulation.envoie_historique()
+    plt.title("Evolution de L_best")
+    plt.xlabel("Itération")
+    plt.ylabel("L_best")
+    plt.plot(historique_L_best)
+    plt.show()
+
+
+
+
+
+
+    
